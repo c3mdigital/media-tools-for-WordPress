@@ -30,7 +30,7 @@ $c3m_media_tools = new C3M_Media_Tools();
 
 class C3M_Media_Tools {
 
-	private static $media_tabs_key = 'media_tabs_key';
+	private  $media_tabs_key = 'media_tabs';
 
 	function __construct() {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
@@ -43,13 +43,13 @@ class C3M_Media_Tools {
 	 * @param string $hook reference to current admin page
 	 */
 	function media_tools_js( $hook ) {
-		if( 'tools_page_media_tools' == $hook )
+		if( 'tools_page_media_tabs' == $hook )
 			wp_enqueue_script( 'media-tools-ajax', plugins_url( 'js/media.tools.ajax.js', __FILE__), array( 'jquery' ) );
 
 	}
 
 	function admin_menu() {
-		add_submenu_page( 'tools.php', 'Media Tools', 'Media Tools', 'manage_options', self::$media_tabs_key, array( $this, 'admin_media_page') );
+		add_submenu_page( 'tools.php', 'Media Tools', 'Media Tools', 'manage_options', $this->media_tabs_key, array( $this, 'admin_media_page') );
 	}
 
 	function media_tools_tabs() {
@@ -69,7 +69,7 @@ class C3M_Media_Tools {
 
 		<div class="wrap">
 			<?php wp_nonce_field( $tab );
-			$this->menu_tabs( $tab );
+			echo $this->menu_tabs( $tab );
 
 			switch ( $tab ) :
 				case 'home' :
@@ -99,7 +99,7 @@ class C3M_Media_Tools {
 		foreach( $tabs as $tab_key => $tab_caption ) :
 			$active = $current_tab == $tab_key ? 'nav-tab-active' : '';
 
-			$output .= '<a class="nav-tab '.$active. '" href=?page=' .self::$media_tabs_key. '&tab='.$tab_key. '>' .$tab_caption. '</a>';
+			$output .= '<a class="nav-tab '.$active. '" href=?page=' .$this->media_tabs_key. '&tab='.$tab_key. '>' .$tab_caption. '</a>';
 		endforeach;
 			$output .= '</h2>';
 		return $output;
@@ -144,13 +144,30 @@ class C3M_Media_Tools {
 				<p><?php _e( 'You can import external images into the media library, attach media to a post or page, and set images as the featured image.' ); ?></p>
 
 			</div>
-
+			<div>
 			<div class="set-featured">
-			<h3><?php _e( 'Set Featured Images' ); ?></h3>
-			<p><?php _e( 'This tool goes through your posts and sets the first image found as the featured image' ); ?></p>
-			<h3 id="convert-title"><?php _e( 'Choose where to convert from' ); ?></h3>
-			<form action="" method="get" id="export-filters">
+				<h3><?php _e( 'Set Featured Images' ); ?></h3>
+				<p><?php  _e( 'This tool goes through your posts and sets the first image found as the featured image' ); ?></p>
+				<p><?php  _e( 'If the post already has a featured image set it will be skipped' ); ?></p>
+				<p><?php  _e( 'If the first image is from an external source or not attached to the post it will be added to the media library and attached to the post' ); ?></p>
+			</div>
+			<div class="convert-media">
+				<h3><?php _e( 'Import External Images' ); ?></h3>
+				<p><?php  _e( 'This tool goes through your chosen posts or pages and imports external images into the media library' ); ?></p>
+				<p><?php  _e( 'The src attribute of any found images are checked against your set uploads dir and will not insert if they match' ); ?></p>
+				<p><?php  _e( 'This also changes the img src attribute to reference the new location in your uploads folder' ); ?></p>
+				<p><?php  _e( 'You can also choose to make the first image the featured image' ); ?></p>
+			</div>
 
+			<h3 id="convert-title"><?php _e( 'Choose tool to run' ); ?></h3>
+			<form action="" method="get" id="export-filters">
+				<p>
+					<select id="choose-tool" name="choose-tool">
+						<option value="set-featured"><?php _e( 'Set Featured Images' ); ?></option>
+						<option value="import-media"><?php _e( 'Import External Images' ); ?></option>
+						<option value="convert-import"><?php _e( 'Import External and Set Featured Image' ) ;?></option>
+					</select></p>
+				<h3 id="convert-title"><?php _e( 'Choose content to run the tool on' ); ?></h3>
 				<p><label><input type="radio" name="content" value="all" checked="checked"/> <?php _e( 'All content' ); ?></label></p>
 				<p class="description"><?php _e( 'This will convert the first image from  all of your posts, pages, custom posts.' ); ?></p>
 
@@ -226,42 +243,43 @@ class C3M_Media_Tools {
 		/** @var object $data The  serialized form object */
 
 		$data = $_POST['args'];
-		if ( ! isset( $data[0]['content'] ) || 'all' == $data[0]['content'] ) {
+
+		if ( ! isset( $data[1]['content'] ) || 'all' == $data[1]['content'] ) {
 			$args['content'] = 'all';
 		}
-		else if ( 'posts' == $data[0]['content'] ) {
+		else if ( 'posts' == $data[1]['content'] ) {
 			$args['content'] = 'post';
 
-			if ( $data[1]['cat'] )
-				$args['category'] = (int)$data[1]['cat'];
+			if ( $data[2]['cat'] )
+				$args['category'] = (int)$data[2]['cat'];
 
-			if ( $data[2]['post_author'] )
-				$args['author'] = (int)$data[2]['post_author'];
+			if ( $data[3]['post_author'] )
+				$args['author'] = (int)$data[3]['post_author'];
 
-			if ( $data[3]['post_start_date'] || $data[4]['post_end_date'] ) {
-				$args['start_date'] = $data[3]['post_start_date'];
-				$args['end_date'] = $data[4]['post_end_date'];
+			if ( $data[4]['post_start_date'] || $data[5]['post_end_date'] ) {
+				$args['start_date'] = $data[4]['post_start_date'];
+				$args['end_date'] = $data[5]['post_end_date'];
 			}
 
-			if ( $data[5]['post_status'] )
-				$args['status'] = $data[5]['post_status'];
+			if ( $data[6]['post_status'] )
+				$args['status'] = $data[6]['post_status'];
 		}
-		else if ( 'pages' == $data[0]['content'] ) {
+		else if ( 'pages' == $data[1]['content'] ) {
 			$args['content'] = 'page';
 
-			if ( $data[6]['page_author'] )
-				$args['author'] = (int)$data[6]['page_author'];
+			if ( $data[7]['page_author'] )
+				$args['author'] = (int)$data[7]['page_author'];
 
-			if ( $data[7]['page_start_date'] || $data[8]['page_end_date'] ) {
-				$args['start_date'] = $data[7]['page_start_date'];
-				$args['end_date'] = $data[8]['page_end_date'];
+			if ( $data[8]['page_start_date'] || $data[9]['page_end_date'] ) {
+				$args['start_date'] = $data[8]['page_start_date'];
+				$args['end_date'] = $data[9]['page_end_date'];
 			}
 
-			if ( $data[9]['page_status'] )
-				$args['status'] = $data[9]['page_status'];
+			if ( $data[10]['page_status'] )
+				$args['status'] = $data[10]['page_status'];
 		}
 		else {
-			$args['content'] = $data[0]['content'];
+			$args['content'] = $data[1]['content'];
 		}
 		$response = false;
 		$ids = $this->query( $args );
@@ -270,6 +288,15 @@ class C3M_Media_Tools {
 
 		for ( $i = 0; $i < count( $ids ); $i ++ ) {
 			$post = get_post( $ids[ $i ] );
+
+			if ( 'import-media' == $data[0] ) {
+				$response .= $this-> extract_multi( $post );
+					continue;
+			}
+
+			if ( 'convert-import' == $data[0] )
+				$response .= $this->extract_multi( $post );
+
 
 			/** If the post already has an attached thumbnail continue with the loop  */
 
@@ -319,6 +346,9 @@ class C3M_Media_Tools {
 
 	function media_tab() {
 
+		echo '<h2>Coming Soon more media tools.........</h2>';
+		echo '<p>Next tool to be added will be a tool that imports media from a directory on your server</p>';
+
 	}
 
 	function options() {
@@ -340,8 +370,7 @@ class C3M_Media_Tools {
 	 * Extracts the first image in the post content
 	 *
 	 * @param object $post the post object
-	 *
-	 * @return bool|array false if no images or img src
+	 * @return bool|string false if no images or img src
 	 */
 	function extract_image( $post ) {
 		$html = $post->post_content;
@@ -359,6 +388,43 @@ class C3M_Media_Tools {
 		} else {
 			return false;
 		}
+	}
+
+	/**
+	 * @param $post
+	 *
+	 * @return array|bool
+	 */
+	function extract_multi( $post ) {
+		$html = $post->post_content;
+		$upload_path = wp_upload_dir();
+		$images = array();
+		if ( stripos( $html, '<img' ) !== false ) {
+			$regex = '#<\s*img [^\>]*src\s*=\s*(["\'])(.*?)\1#im';
+			 preg_match_all( $regex, $html, $matches );
+
+			if ( is_array( $matches ) && ! empty( $matches ) ) {
+				$content = '';
+				foreach( $matches[2] as $img ) {
+					if ( false != strpbrk( $img, $upload_path['path'] ) )
+						continue;
+					$file = media_sideload_image( $img, (int)$post->ID );
+					if ( ! is_wp_error( $file ) ) {
+						array_push( $images, $img );
+						$content .= str_ireplace( $matches[2], $file, $html );
+					}
+				}
+				$id = wp_update_post( $arrs['ID'] = $post->ID, $arrs['post_content'] = $content );
+				array_push( $images, $id );
+
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+
+		}
+		return array_reverse( $images );
 	}
 
 	/**
