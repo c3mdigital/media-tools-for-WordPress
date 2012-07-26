@@ -1,4 +1,10 @@
-media-tools-for-WordPress
+Media Tools for WordPress
 =========================
 
-A set of tools to help manage your media library.  Import and attach external images, set first image in post content as featured image, attach all images in a post and import into the media library and more. 
+### A set of tools to help manage your media library.  
+
+Imports and attaches external images from the post content, set first image in post as featured image, and more.
+
+Control and filter the import script by post type, author, date range, or category.
+
+Ajax interface that converts the images with one simple click.
