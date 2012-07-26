@@ -30,7 +30,7 @@ $c3m_media_tools = new C3M_Media_Tools();
 
 class C3M_Media_Tools {
 
-	private $media_tabs_key = 'media_tools';
+	private static $media_tabs_key = 'media_tabs_key';
 
 	function __construct() {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
@@ -39,7 +39,9 @@ class C3M_Media_Tools {
 		add_action( 'wp_ajax_convert-featured', array( $this, 'ajax_handler' ) );
 	}
 
-
+	/**
+	 * @param string $hook reference to current admin page
+	 */
 	function media_tools_js( $hook ) {
 		if( 'tools_page_media_tools' == $hook )
 			wp_enqueue_script( 'media-tools-ajax', plugins_url( 'js/media.tools.ajax.js', __FILE__), array( 'jquery' ) );
@@ -47,7 +49,7 @@ class C3M_Media_Tools {
 	}
 
 	function admin_menu() {
-		add_submenu_page( 'tools.php', 'Media Tools', 'Media Tools', 'manage_options', $this->media_tabs_key, array( $this, 'admin_media_page') );
+		add_submenu_page( 'tools.php', 'Media Tools', 'Media Tools', 'manage_options', self::$media_tabs_key, array( $this, 'admin_media_page') );
 	}
 
 	function media_tools_tabs() {
@@ -58,6 +60,7 @@ class C3M_Media_Tools {
 		);
 		return $tabs;
 	}
+
 	function admin_media_page() {
 		if( isset( $_GET['tab'] ) )
 			$tab = $_GET['tab'];
@@ -83,17 +86,23 @@ class C3M_Media_Tools {
 
 <?php	}
 
+	/**
+	 * @param string $current_tab
+	 *
+	 * @return string The tab header html
+	 */
 	function menu_tabs( $current_tab = 'home' ) {
-		echo '<div id="icon-options-general" class="icon32"><br></div>';
-		echo '<h2 class="nav-tab-wrapper">';
+		$output = '<div id="icon-options-general" class="icon32"><br></div>';
+		$output .=  '<h2 class="nav-tab-wrapper">';
 		$tabs = $this->media_tools_tabs();
 
 		foreach( $tabs as $tab_key => $tab_caption ) :
 			$active = $current_tab == $tab_key ? 'nav-tab-active' : '';
 
-			echo '<a class="nav-tab '.$active. '" href=?page=' .$this->media_tabs_key. '&tab='.$tab_key. '>' .$tab_caption. '</a>';
+			$output .= '<a class="nav-tab '.$active. '" href=?page=' .self::$media_tabs_key. '&tab='.$tab_key. '>' .$tab_caption. '</a>';
 		endforeach;
-		echo '</h2>';
+			$output .= '</h2>';
+		return $output;
 
 	}
 
@@ -123,7 +132,7 @@ class C3M_Media_Tools {
 
 <?php }
 
-	function home_tab() {
+	 function home_tab() {
 
 		global $wpdb;
 		$title = __( 'WordPress Media Tools' ); ?>
@@ -214,6 +223,8 @@ class C3M_Media_Tools {
 
 	function ajax_handler() {
 
+		/** @var object $data The  serialized form object */
+
 		$data = $_POST['args'];
 		if ( ! isset( $data[0]['content'] ) || 'all' == $data[0]['content'] ) {
 			$args['content'] = 'all';
@@ -254,11 +265,18 @@ class C3M_Media_Tools {
 		}
 		$response = false;
 		$ids = $this->query( $args );
+
+		/** @var $i @param array $ids The array of post ids returned from the query  */
+
 		for ( $i = 0; $i < count( $ids ); $i ++ ) {
 			$post = get_post( $ids[ $i ] );
 
+			/** If the post already has an attached thumbnail continue with the loop  */
+
 			if ( has_post_thumbnail( $post->ID ) )
 				continue;
+
+			/** @var $attachments array of attached images to the post */
 
 			$attachments = $this->get_attach( $post->ID );
 
@@ -266,12 +284,15 @@ class C3M_Media_Tools {
 				$img = $this->extract_image( $post );
 				if( empty( $img ) )
 					continue;
-
+				/** @var $file string or WP_Error of image attached to the post  */
 				$file = media_sideload_image( $img, (int)$post->ID );
 
 				if ( ! is_wp_error( $file ) ) {
 					$atts = $this->get_attach( $post->ID );
 					foreach ( $atts as $a ) {
+
+						/** @var $img bool attaches image as the post thumbnail  */
+
 						$img = set_post_thumbnail( $post->ID, $a['ID'] );
 						if ( $img )
 							$response .= $post->post_title . ' featured image set' . "\n";
@@ -315,6 +336,13 @@ class C3M_Media_Tools {
 
 	}
 
+	/**
+	 * Extracts the first image in the post content
+	 *
+	 * @param object $post the post object
+	 *
+	 * @return bool|array false if no images or img src
+	 */
 	function extract_image( $post ) {
 		$html = $post->post_content;
 		if ( stripos( $html, '<img' ) !== false ) {
@@ -333,6 +361,12 @@ class C3M_Media_Tools {
 		}
 	}
 
+	/**
+	 * Queries the posts based on the form field data
+	 * @param array $args The ajax form array formatted for the query
+	 *
+	 * @return array $post_ids an array of post ids from the query result
+	 */
 	function query( $args = array() ) {
 		global $wpdb, $post;
 
@@ -381,6 +415,10 @@ class C3M_Media_Tools {
 			return $post_ids;
 	}
 
+	/**
+	 * Converts the data ranges to a string for the query
+	 * @param string $post_type
+	 */
 	function convert_date_options( $post_type = 'post' ) {
 		global $wpdb, $wp_locale;
 
