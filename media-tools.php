@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: Convert to featured image
- * Plugin URI: http://wordpress.org
+ * Plugin Name: Media Tools
+ * Plugin URI: https://github.com/c3mdigital/media-tools-for-WordPress
  * Description: Tools for working with the WordPress media library and converting images to attachments and featured images
  * Version: 1.0
  * Author: Chris Olbekson
