@@ -25,7 +25,7 @@
 
                     },
                     success: function(data) {
-                        $("#featured-ajax-response").html("<pre>" + data + "</pre>");
+                        $("#featured-ajax-response").html("<pre style='white-space: normal'>" + data + "</pre>");
                         $("#converting").replaceWith("<h3>Results</h3>");
                         $("#ajax-spinner").hide();
                     }

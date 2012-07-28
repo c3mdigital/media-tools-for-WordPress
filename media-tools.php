@@ -26,17 +26,104 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
  
-$c3m_media_tools = new C3M_Media_Tools();
+ $c3m_media_tools = new C3M_Media_Tools();
 
-class C3M_Media_Tools {
+ class C3M_Media_Tools {
 
-	private  $media_tabs_key = 'media_tabs';
+	var $media_settings;
+	var $media_tools;
+	private $media_tabs_key = 'media_tabs';
+	private static $thumbnail_support;
+	private $media_tools_key = 'media_tools';
+	private $media_settings_key = 'media_options';
+	private $media_settings_tabs = array();
+
+
 
 	function __construct() {
-		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
-		add_action( 'admin_head', array( $this, 'home_tab_js' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'media_tools_js' ) );
-		add_action( 'wp_ajax_convert-featured', array( $this, 'ajax_handler' ) );
+		self:: $thumbnail_support = current_theme_supports( 'post-thumbnails' ) ? true : add_theme_support( 'post-thumbnails' );
+		$this->add_image_sizes();
+		$this->actions();
+	}
+
+	function actions() {
+		add_action( 'admin_menu', array ( $this, 'admin_menu' ) );
+		add_action( 'init', array( $this, 'load_settings' ) );
+		add_action( 'admin_head', array ( $this, 'home_tab_js' ) );
+		add_action( 'admin_enqueue_scripts', array ( $this, 'media_tools_js' ) );
+		add_action( 'wp_ajax_convert-featured', array ( $this, 'ajax_handler' ) );
+		add_action( 'admin_init', array( $this, 'register_media_options' ) );
+		add_action( 'admin_init', array ( $this, 'register_media_tools' ) );
+
+	}
+
+	function load_settings() {
+		$this->media_tools = (array)get_option( $this->media_tools_key );
+		$this->media_settings = (array) get_option( $this->media_settings_key );
+
+		$this->media_settings = array_merge( array( 'img_handle' => '', 'img_width' => '', 'img_height' => '', 'img_crop' => '' ), $this->media_settings );
+		$this->media_tools = array_merge( array (  ), $this->media_tools );
+
+	}
+
+	 function register_media_tools() {
+		 $this->media_settings_tabs[$this->media_tools_key] = 'Media Tools';
+		 register_setting( $this->media_tools_key, $this->media_tools_key );
+	 }
+
+	function register_media_options() {
+		$this->media_settings_tabs[$this->media_settings_key] = 'Media Options';
+		register_setting( $this->media_settings_key, $this->media_settings_key );
+		add_settings_section( 'media_options_general', 'Media Optons', array( $this, 'section_description' ), $this->media_settings_key );
+		add_settings_field( 'img_handle', 'Image  Handle', array( $this, 'field_media_options' ), $this->media_settings_key, 'media_options_general' );
+		add_settings_field( 'img_width', 'Image Width', array ( $this, 'field_width_options' ), $this->media_settings_key, 'media_options_general' );
+		add_settings_field( 'img_height', 'Image Height', array ( $this, 'field_height_options' ), $this->media_settings_key, 'media_options_general' );
+		add_settings_field( 'img_crop', 'Image Crop Factor', array ( $this, 'field_crop_options' ), $this->media_settings_key, 'media_options_general' );
+
+	}
+
+	function section_description() {
+		echo 'WordPress custom featured image sizes require a handle, height, width, and crop factor';
+	}
+
+	function field_media_options() { ?>
+	<input type="text" name="<?php echo $this->media_settings_key; ?>[img_handle]" value="<?php echo esc_attr( $this->media_settings['img_handle'] ); ?>"/><br>
+
+	<?php }
+
+	 function field_width_options() { ?>
+	 <input type="text" name="<?php echo $this->media_settings_key; ?>[img_width]" value="<?php echo esc_attr( $this->media_settings['img_width'] ); ?>"/>
+	 <?php
+	 }
+
+	 function field_height_options() {  ?>
+	 <input type="text" name="<?php echo $this->media_settings_key; ?>[img_height]" value="<?php echo esc_attr( $this->media_settings['img_width'] ); ?>"/>
+	 <?php
+	 }
+
+	 function field_crop_options() { ?>
+	 <select name="<?php echo $this->media_settings_key; ?>[img_crop]" >
+	    <option value="hard" selected="<?php selected( 'hard', $this->media_settings['img_crop'] ); ?>"><?php _e( 'Hard Crop' ); ?></option>
+	    <option value="soft" selected="<?php selected( 'soft', $this->media_settings['img_crop'] ); ?>"><?php _e( 'Soft Crop' ); ?></option>
+	 </select>
+	 <?php
+	 }
+
+	function options_tab( $tab ) {
+		echo '<form method = "post" action = "options.php" >';
+		wp_nonce_field( 'options.php' );
+		settings_fields( $tab );
+		do_settings_sections( $tab );
+		submit_button();
+		echo '</form>';
+	 }
+
+	function add_image_sizes() {
+			$ops = (array) get_option( $this->media_settings_key );
+		if ( ! empty( $ops ) && isset( $ops['img_crop'] ) && isset( $ops['img_handle'] ) && isset( $ops['img_width'] ) && isset( $ops['img_height'] ) ) {
+			$crop = $ops['img_crop'] == 'hard' ? true : false;
+			add_image_size( $ops['img_handle'] , (int) $ops['img_width'], (int) $ops['img_height'], $crop );
+		}
 	}
 
 	/**
@@ -52,57 +139,35 @@ class C3M_Media_Tools {
 		add_submenu_page( 'tools.php', 'Media Tools', 'Media Tools', 'manage_options', $this->media_tabs_key, array( $this, 'admin_media_page') );
 	}
 
-	function media_tools_tabs() {
-		$tabs = array(
-			'home'      => 'Media Tools',
-			'media'     => 'Media',
-			'options'   => 'Media Options',
-		);
-		return $tabs;
-	}
-
 	function admin_media_page() {
-		if( isset( $_GET['tab'] ) )
-			$tab = $_GET['tab'];
-		else
-			$tab = 'home'; ?>
-
+		$tab = isset( $_GET['tab'] ) ? $_GET['tab'] : $this->media_tools_key; ?>
 		<div class="wrap">
-			<?php wp_nonce_field( $tab );
-			echo $this->menu_tabs( $tab );
+			<?php  $this->menu_tabs( $tab );
 
 			switch ( $tab ) :
-				case 'home' :
+				case $this->media_tools_key :
 					$this->home_tab();
 				break;
-				case 'media' :
-					$this->media_tab();
+				case $this->media_settings_key :
+					$this->options_tab( $tab );
 				break;
-				case 'options' :
-					$this->options();
 			endswitch; ?>
-
 		</div>
 
 <?php	}
 
-	/**
-	 * @param string $current_tab
-	 *
-	 * @return string The tab header html
-	 */
-	function menu_tabs( $current_tab = 'home' ) {
-		$output = '<div id="icon-options-general" class="icon32"><br></div>';
-		$output .=  '<h2 class="nav-tab-wrapper">';
-		$tabs = $this->media_tools_tabs();
 
-		foreach( $tabs as $tab_key => $tab_caption ) :
+	function menu_tabs() {
+		$current_tab = isset( $_GET['tab'] ) ? $_GET['tab'] : $this->media_tools_key;
+		echo '<div id="icon-options-general" class="icon32"><br></div>';
+		echo  '<h2 class="nav-tab-wrapper">';
+
+		foreach( $this->media_settings_tabs  as $tab_key => $tab_caption ) :
 			$active = $current_tab == $tab_key ? 'nav-tab-active' : '';
 
-			$output .= '<a class="nav-tab '.$active. '" href=?page=' .$this->media_tabs_key. '&tab='.$tab_key. '>' .$tab_caption. '</a>';
+			echo  '<a class="nav-tab '.$active. '" href=?page=' .$this->media_tabs_key. '&tab='.$tab_key. '>' .$tab_caption. '</a>';
 		endforeach;
-			$output .= '</h2>';
-		return $output;
+			echo  '</h2>';
 
 	}
 
@@ -116,19 +181,18 @@ class C3M_Media_Tools {
 			filters = form.find('.export-filters');
 			filters.hide();
 			form.find('input:radio').change(function () {
-				filters.slideUp('fast');
-					switch ($(this).val()) {
-					case 'posts':
-					$('#post-filters').slideDown();
-					break;
-					case 'pages':
-					$('#page-filters').slideDown();
-					break;
-					}
-			});
-		});
-		//]]>
-	</script>
+			filters.slideUp('fast');
+				switch ($(this).val()) {
+				case 'posts':
+				$('#post-filters').slideDown();
+				break;
+				case 'pages':
+				$('#page-filters').slideDown();
+				break;
+				}
+			}); });
+			//]]>
+		</script>
 
 <?php }
 
@@ -281,21 +345,21 @@ class C3M_Media_Tools {
 		else {
 			$args['content'] = $data[1]['content'];
 		}
-		$response = false;
+		$response = array();
 		$ids = $this->query( $args );
-
+	//	var_dump( $data ); wp_die();
 		/** @var $i @param array $ids The array of post ids returned from the query  */
 
 		for ( $i = 0; $i < count( $ids ); $i ++ ) {
 			$post = get_post( $ids[ $i ] );
 
-			if ( 'import-media' == $data[0] ) {
+			if ( in_array( 'import-media', $data[0] ) ) {
 				$response .= $this-> extract_multi( $post );
 					continue;
 			}
 
-			if ( 'convert-import' == $data[0] )
-				$response .= $this->extract_multi( $post );
+			if ( in_array( 'convert-import', $data[0] ) )
+				 $this->extract_multi( $post );
 
 
 			/** If the post already has an attached thumbnail continue with the loop  */
@@ -338,22 +402,12 @@ class C3M_Media_Tools {
 		}
 
 		if ( empty( $response) )
-			die( -1 );
+			wp_die( -1 );
 
 		echo $response;
-			die(1);
+			wp_die(1);
 	}
 
-	function media_tab() {
-
-		echo '<h2>Coming Soon more media tools.........</h2>';
-		echo '<p>Next tool to be added will be a tool that imports media from a directory on your server</p>';
-
-	}
-
-	function options() {
-
-	}
 
 	function get_attach( $post_id ) {
 		return get_children( array (
@@ -391,31 +445,55 @@ class C3M_Media_Tools {
 	}
 
 	/**
-	 * @param $post
+	 * @param object $post The post object
 	 *
-	 * @return array|bool
+	 * @return array|bool Post id and images converted on success false if no images found in source
 	 */
 	function extract_multi( $post ) {
 		$html = $post->post_content;
 		$upload_path = wp_upload_dir();
-		$images = array();
+
 		if ( stripos( $html, '<img' ) !== false ) {
+			echo '<h3>Results for <a href="' . esc_url( admin_url( 'post.php?post=' . $post->ID . '&action=edit' ) ) . '">Post ID: ' . $post->ID. '</a></h3>';
 			$regex = '#<\s*img [^\>]*src\s*=\s*(["\'])(.*?)\1#im';
 			 preg_match_all( $regex, $html, $matches );
 
 			if ( is_array( $matches ) && ! empty( $matches ) ) {
-				$content = '';
+				$new = array();
+				$old = array();
 				foreach( $matches[2] as $img ) {
-					if ( false != strpbrk( $img, $upload_path['path'] ) )
-						continue;
-					$file = media_sideload_image( $img, (int)$post->ID );
-					if ( ! is_wp_error( $file ) ) {
-						array_push( $images, $img );
-						$content .= str_ireplace( $matches[2], $file, $html );
+				//	if ( false != strpbrk( $img, $upload_path['path'] ) )
+				//		echo strpbrk( $img, $upload_path['path'] );
+					$tmp = download_url( $img );
+
+					preg_match('/[^\?]+\.(jpg|JPG|jpe|JPE|jpeg|JPEG|gif|GIF|png|PNG)/', $img, $matches);
+					$file_array['name'] = basename($matches[0]);
+					$file_array['tmp_name'] = $tmp;
+					// If error storing temporarily, unlink
+	                if ( is_wp_error( $tmp ) ) {
+	                        @unlink($file_array['tmp_name']);
+	                        $file_array['tmp_name'] = '';
+	                }
+					$id = media_handle_sideload( $file_array, $post->ID );
+
+					if ( ! is_wp_error( $id ) ) {
+  						$url  = wp_get_attachment_url( $id );
+						$thumb = wp_get_attachment_thumb_url( $id );
+						array_push( $new, $url );
+						array_push( $old, $img ); ?>
+						<p>
+						<a href="<?php echo wp_nonce_url( get_edit_post_link( $id, true ) ); ?>" title="edit-image"><img src="<?php echo esc_url( $thumb ); ?>" style="max-width:100px;" /></a>
+						</p>
+
+					<?php
 					}
 				}
-				$id = wp_update_post( $arrs['ID'] = $post->ID, $arrs['post_content'] = $content );
-				array_push( $images, $id );
+				$content = str_ireplace( $old, $new, $html );
+				$arrs = array( 'ID' => $post->ID, 'post_content' => $content, );
+				if ( !empty( $content ) )
+					$post_id = wp_update_post( $arrs );
+					if ( isset( $post_id ) )
+						echo 'Post Content updated for Post: '.$post_id.'<br>';
 
 			} else {
 				return false;
@@ -424,11 +502,14 @@ class C3M_Media_Tools {
 			return false;
 
 		}
-		return array_reverse( $images );
+
+		return 'Process Complete';
 	}
 
 	/**
 	 * Queries the posts based on the form field data
+	 * The database MySql queries were <del>inspired</del> jacked from the WordPress Export tool
+	 *
 	 * @param array $args The ajax form array formatted for the query
 	 *
 	 * @return array $post_ids an array of post ids from the query result
