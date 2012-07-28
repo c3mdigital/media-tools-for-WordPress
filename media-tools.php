@@ -54,16 +54,13 @@
 		add_action( 'wp_ajax_convert-featured', array ( $this, 'ajax_handler' ) );
 		add_action( 'admin_init', array( $this, 'register_media_options' ) );
 		add_action( 'admin_init', array ( $this, 'register_media_tools' ) );
-
 	}
 
 	function load_settings() {
 		$this->media_tools = (array)get_option( $this->media_tools_key );
 		$this->media_settings = (array) get_option( $this->media_settings_key );
-
 		$this->media_settings = array_merge( array( 'img_handle' => '', 'img_width' => '', 'img_height' => '', 'img_crop' => '' ), $this->media_settings );
-		$this->media_tools = array_merge( array (  ), $this->media_tools );
-
+		$this->media_tools = array_merge( array ( ), $this->media_tools );
 	}
 
 	 function register_media_tools() {
@@ -74,56 +71,85 @@
 	function register_media_options() {
 		$this->media_settings_tabs[$this->media_settings_key] = 'Media Options';
 		register_setting( $this->media_settings_key, $this->media_settings_key );
-		add_settings_section( 'media_options_general', 'Media Optons', array( $this, 'section_description' ), $this->media_settings_key );
+		add_settings_section( 'media_options_general', 'Add additional image size', array( $this, 'section_description' ), $this->media_settings_key );
 		add_settings_field( 'img_handle', 'Image  Handle', array( $this, 'field_media_options' ), $this->media_settings_key, 'media_options_general' );
 		add_settings_field( 'img_width', 'Image Width', array ( $this, 'field_width_options' ), $this->media_settings_key, 'media_options_general' );
 		add_settings_field( 'img_height', 'Image Height', array ( $this, 'field_height_options' ), $this->media_settings_key, 'media_options_general' );
 		add_settings_field( 'img_crop', 'Image Crop Factor', array ( $this, 'field_crop_options' ), $this->media_settings_key, 'media_options_general' );
-
 	}
 
 	function section_description() {
 		echo 'WordPress custom featured image sizes require a handle, height, width, and crop factor';
 	}
-
+	/** @todo Validation function for text input fields */
 	function field_media_options() { ?>
-	<input type="text" name="<?php echo $this->media_settings_key; ?>[img_handle]" value="<?php echo esc_attr( $this->media_settings['img_handle'] ); ?>"/><br>
-
+	<input type="text" name="<?php echo $this->media_settings_key; ?>[img_handle]" value=""/><br>
 	<?php }
 
 	 function field_width_options() { ?>
-	 <input type="text" name="<?php echo $this->media_settings_key; ?>[img_width]" value="<?php echo esc_attr( $this->media_settings['img_width'] ); ?>"/>
-	 <?php
-	 }
+	 <input type="text" name="<?php echo $this->media_settings_key; ?>[img_width]" value=""/>
+	 <?php }
 
 	 function field_height_options() {  ?>
-	 <input type="text" name="<?php echo $this->media_settings_key; ?>[img_height]" value="<?php echo esc_attr( $this->media_settings['img_width'] ); ?>"/>
-	 <?php
-	 }
+	 <input type="text" name="<?php echo $this->media_settings_key; ?>[img_height]" value=""/>
+	 <?php }
 
 	 function field_crop_options() { ?>
 	 <select name="<?php echo $this->media_settings_key; ?>[img_crop]" >
-	    <option value="hard" selected="<?php selected( 'hard', $this->media_settings['img_crop'] ); ?>"><?php _e( 'Hard Crop' ); ?></option>
-	    <option value="soft" selected="<?php selected( 'soft', $this->media_settings['img_crop'] ); ?>"><?php _e( 'Soft Crop' ); ?></option>
+	    <option value="1"><?php _e( 'Hard Crop' ); ?></option>
+	    <option value="0"><?php _e( 'Soft Crop' ); ?></option>
 	 </select>
-	 <?php
-	 }
+	 <?php }
 
 	function options_tab( $tab ) {
 		echo '<form method = "post" action = "options.php" >';
 		wp_nonce_field( 'options.php' );
+			echo '<div style="float:left;width:330px;">';
+			$this->show_thumb_sizes();
+			echo '</div>';
+		echo '<div style="float:left;margin-top:50px;">';
 		settings_fields( $tab );
 		do_settings_sections( $tab );
-		submit_button();
+		submit_button( 'Add Image Size');
+		echo '</div>';
 		echo '</form>';
+		echo '<div class="clear"></div>';
+		if ( class_exists( 'RegenerateThumbnails') ) {
+			$regen = new RegenerateThumbnails;
+			$regen->regenerate_interface();
+		} else {
+			_e( '<h3>Regenerate Thumbnails</h3>' );
+			printf( __('<p>Install Regenerate Thumbnails to crop all images that you have uploaded to your blog. This is useful if you\'ve changed any of the thumbnail dimensions above or on the <a href="%s">media settings page</a></p>' ), admin_url( 'options-media.php') );
+
+
+			$url = current_user_can( 'install_plugins' ) ? wp_nonce_url( self_admin_url( 'update.php?action=install-plugin&plugin=regenerate-thumbnails' ), 'install-plugin_regenerate-thumbnails' ) : 'http://wordpress.org/extend/plugins/regenerate-thumbnails/';
+			_e( '<a href="'.esc_url( $url ).'"> class="button-secondary>Install Regenerate Thumbnails</a>' );
+		}
+
 	 }
 
 	function add_image_sizes() {
 			$ops = (array) get_option( $this->media_settings_key );
 		if ( ! empty( $ops ) && isset( $ops['img_crop'] ) && isset( $ops['img_handle'] ) && isset( $ops['img_width'] ) && isset( $ops['img_height'] ) ) {
-			$crop = $ops['img_crop'] == 'hard' ? true : false;
+			$crop = $ops['img_crop'] == '1' ? true : false;
 			add_image_size( $ops['img_handle'] , (int) $ops['img_width'], (int) $ops['img_height'], $crop );
 		}
+	}
+
+	function show_thumb_sizes() {
+		global $_wp_additional_image_sizes; ?>
+		<h2><?php _e( 'Current Registered Image Sizes' ); ?></h2>
+			<ul>
+			<?php foreach( $_wp_additional_image_sizes as $size => $props ) {
+				$crop = true == $props['crop'] ? 'Hard Crop' : 'Soft Crop';
+				_e( '<li><h3>'     .$size.'</h3>' );
+				_e( 'Width: '  .$props['width'].'<br>' );
+				_e( 'Height: ' .$props['height'].'<br>' );
+				_e( 'Crop: '   .$crop.'<br>' );
+				_e( '</li>' );
+		}
+		echo '</ul>';
+
 	}
 
 	/**
@@ -204,26 +230,26 @@
 			<div class="page-description">
 				<h2><?php echo esc_html( $title ); ?></h2>
 
-				<p><?php _e( 'WordPress Media Tools are a set of tools to help you manage the media in your posts and pages.' ); ?></p>
-				<p><?php _e( 'You can import external images into the media library, attach media to a post or page, and set images as the featured image.' ); ?></p>
+				<p><?php _e( 'WordPress Media Tools are a set of tools to help you manage the media in your posts and pages.<br>' ); ?>
+				<?php _e( 'You can import external images into the media library, attach media to a post or page, and set images as the featured image.' ); ?></p>
 
 			</div>
 			<div>
 			<div class="set-featured">
 				<h3><?php _e( 'Set Featured Images' ); ?></h3>
-				<p><?php  _e( 'This tool goes through your posts and sets the first image found as the featured image' ); ?></p>
-				<p><?php  _e( 'If the post already has a featured image set it will be skipped' ); ?></p>
-				<p><?php  _e( 'If the first image is from an external source or not attached to the post it will be added to the media library and attached to the post' ); ?></p>
+				<p><?php  _e( 'This tool goes through your posts and sets the first image found as the featured image' ); ?>
+				<?php  _e( 'If the post already has a featured image set it will be skipped.<br>' ); ?>
+				<?php  _e( 'If the first image is from an external source or not attached to the post it will be added to the media library and attached to the post' ); ?></p>
 			</div>
 			<div class="convert-media">
 				<h3><?php _e( 'Import External Images' ); ?></h3>
 				<p><?php  _e( 'This tool goes through your chosen posts or pages and imports external images into the media library' ); ?></p>
 				<p><?php  _e( 'The src attribute of any found images are checked against your set uploads dir and will not insert if they match' ); ?></p>
-				<p><?php  _e( 'This also changes the img src attribute to reference the new location in your uploads folder' ); ?></p>
-				<p><?php  _e( 'You can also choose to make the first image the featured image' ); ?></p>
+				<p><?php  _e( 'This also changes the img src attribute to reference the new location in your uploads folder' ); ?>
+				<?php     _e( 'You can also choose to make the first image the featured image' ); ?></p>
 			</div>
 
-			<h3 id="convert-title"><?php _e( 'Choose tool to run' ); ?></h3>
+			<h2 id="convert-title"><?php _e( 'Choose tool to run' ); ?></h2>
 			<form action="" method="get" id="export-filters">
 				<p>
 					<select id="choose-tool" name="choose-tool">
@@ -288,7 +314,7 @@
 						</li>
 					</ul>
 
-				<?php foreach ( get_post_types( array ( '_builtin' => false, 'can_export' => true ), 'objects' ) as $post_type ) : ?>
+				<?php foreach ( get_post_types( array ( '_builtin' => false, 'can_export' => true, 'show_ui' => true ), 'objects' ) as $post_type ) : ?>
 				<p><label><input type="radio" name="content" value="<?php echo esc_attr( $post_type->name ); ?>"/> <?php echo esc_html( $post_type->label ); ?></label></p>
 				<?php endforeach; ?>
 
@@ -305,7 +331,6 @@
 	function ajax_handler() {
 
 		/** @var object $data The  serialized form object */
-
 		$data = $_POST['args'];
 
 		if ( ! isset( $data[1]['content'] ) || 'all' == $data[1]['content'] ) {
@@ -347,23 +372,20 @@
 		}
 		$response = array();
 		$ids = $this->query( $args );
-	//	var_dump( $data ); wp_die();
-		/** @var $i @param array $ids The array of post ids returned from the query  */
 
+		/** @var $i @param array $ids The array of post ids returned from the query  */
 		for ( $i = 0; $i < count( $ids ); $i ++ ) {
 			$post = get_post( $ids[ $i ] );
 
 			if ( in_array( 'import-media', $data[0] ) ) {
-				$response .= $this-> extract_multi( $post );
+				 $this->extract_multi( $post );
 					continue;
 			}
 
 			if ( in_array( 'convert-import', $data[0] ) )
 				 $this->extract_multi( $post );
 
-
 			/** If the post already has an attached thumbnail continue with the loop  */
-
 			if ( has_post_thumbnail( $post->ID ) )
 				continue;
 
@@ -396,13 +418,8 @@
 					if ( $img )
 						$response .=  $post->post_title. ' featured image set'."\n";
 				}
-
 			}
-
 		}
-
-		if ( empty( $response) )
-			wp_die( -1 );
 
 		echo $response;
 			wp_die(1);
@@ -450,6 +467,7 @@
 	 * @return array|bool Post id and images converted on success false if no images found in source
 	 */
 	function extract_multi( $post ) {
+		global $wpdb;
 		$html = $post->post_content;
 		$upload_path = wp_upload_dir();
 
@@ -462,8 +480,9 @@
 				$new = array();
 				$old = array();
 				foreach( $matches[2] as $img ) {
-				//	if ( false != strpbrk( $img, $upload_path['path'] ) )
-				//		echo strpbrk( $img, $upload_path['path'] );
+					/** Compare image source against upload directory to prevent adding same attachment multiple times  */
+					if ( false != strpbrk( $img, $upload_path['path'] ) )
+						continue;
 					$tmp = download_url( $img );
 
 					preg_match('/[^\?]+\.(jpg|JPG|jpe|JPE|jpeg|JPEG|gif|GIF|png|PNG)/', $img, $matches);
@@ -473,7 +492,9 @@
 	                if ( is_wp_error( $tmp ) ) {
 	                        @unlink($file_array['tmp_name']);
 	                        $file_array['tmp_name'] = '';
+		                    continue;
 	                }
+
 					$id = media_handle_sideload( $file_array, $post->ID );
 
 					if ( ! is_wp_error( $id ) ) {
@@ -488,12 +509,14 @@
 					<?php
 					}
 				}
+				if( !empty( $new ) ) {
 				$content = str_ireplace( $old, $new, $html );
-				$arrs = array( 'ID' => $post->ID, 'post_content' => $content, );
+				$post_args = array( 'ID' => $post->ID, 'post_content' => $content, );
 				if ( !empty( $content ) )
-					$post_id = wp_update_post( $arrs );
+					$post_id = wp_update_post( $post_args );
 					if ( isset( $post_id ) )
 						echo 'Post Content updated for Post: '.$post_id.'<br>';
+				} echo 'No external images found for '.$post->ID;
 
 			} else {
 				return false;

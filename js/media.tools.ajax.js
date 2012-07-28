@@ -32,7 +32,16 @@
 
                 });
                 return false;
-        })
+        });
+
+        $("select#choose-tool").change(function() {
+               var tool = '';
+            $("select#choose-tool option:selected").each(function() {
+                 tool += $(this).text();
+            });
+            $("#submit").val(tool);
+
+        }).trigger("change");
 
 
     });
