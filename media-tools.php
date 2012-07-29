@@ -3,7 +3,7 @@
  * Plugin Name: Media Tools
  * Plugin URI: https://github.com/c3mdigital/media-tools-for-WordPress
  * Description: Tools for working with the WordPress media library and converting images to attachments and featured images
- * Version: 1.0
+ * Version: 1.0.1
  * Author: Chris Olbekson
  * Author URI: http://c3mdigital.com
  * License: GPL v2
@@ -26,7 +26,8 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
  
- $c3m_media_tools = new C3M_Media_Tools();
+$c3m_media_tools = new C3M_Media_Tools();
+register_activation_hook( __FILE__, array( $c3m_media_tools, 'activate' ) );
 
  class C3M_Media_Tools {
 
@@ -44,6 +45,20 @@
 		self:: $thumbnail_support = current_theme_supports( 'post-thumbnails' ) ? true : add_theme_support( 'post-thumbnails' );
 		$this->add_image_sizes();
 		$this->actions();
+	}
+
+	function activate( $wp = '3.1', $php = '5.2.4' ) {
+		global $wp_version;
+		if ( version_compare( PHP_VERSION, $php, '<' ) )
+			$flag = 'PHP';
+		elseif
+			( version_compare( $wp_version, $wp, '<' ) )
+			$flag = 'WordPress';
+		else
+			return;
+		$version = 'PHP' == $flag ? $php : $wp;
+		deactivate_plugins( basename(__FILE__) );
+		wp_die('<p>The <strong>Media Tools</strong> plugin requires'.$flag.'  version '.$version.' or greater.</p>','Plugin Activation Error',  array( 'response'=>200, 'back_link'=>TRUE ) );
 	}
 
 	function actions() {
@@ -199,7 +214,7 @@
 
 
 	function home_tab_js() {
-		?>
+		if( isset( $_GET['tab'] ) && $_GET['tab'] == $this->media_tools_key )  { ?>
 		<script type="text/javascript">
 			//<![CDATA[
 			jQuery(document).ready(function ($) {
@@ -215,12 +230,11 @@
 				case 'pages':
 				$('#page-filters').slideDown();
 				break;
-				}
-			}); });
+				} }); });
 			//]]>
 		</script>
-
-<?php }
+<?php   }
+    }
 
 	 function home_tab() {
 

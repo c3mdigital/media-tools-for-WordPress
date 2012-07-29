@@ -4,12 +4,12 @@ Tags: media, media library, images, featured images, post thumbnails, timthumb
 Requires at least: 3.1
 Tested up to: 3.4.1
 Stable tag: 1.0
+Donate link: http://www.redcross.org/
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-A set of tools to help manage your media library.
+A set of tools to help manage your media library. Imports external images and attaches them to your posts, pages or custom post types.
 
-Big improvements are coming to the WordPress media library in 3.5. If your not using the media library this plugin will import all the external images found in your posts or pages and import them into the media library and attach them
 
 == Description ==
 
@@ -37,29 +37,29 @@ Integrates with the Regenerate Thumbnails plugin to regenerate thumbnail crops b
 
 The options and tools are located under the tools menu.
 
-**Please Note:  Requires PHP 5.3**
+**Please Note:  Requires PHP 5.2**
 
 == Frequently Asked Questions ==
 
-= What does this plugin do?
+= What does this plugin do? =
 
 This plugin allows you to go through all your posts, pages, or custom post types and import any externally referenced images into your media library
 and attaches them to the post and can even set the first image as the featured image.
 
 It also enables post thumbnail support if your current theme does not support post thumbnails.  You can even define a custom thumbnail image size.
 
-= I moved my website to a new domain and server and none of my images are showing in the media library or in my posts.  How can I fix this?
+= I moved my website to a new domain and server and none of my images are showing in the media library or in my posts.  How can I fix this? =
 
 If the images are still on the old server you can use this plugin to re import all of them into your media library.  You will want to first delete your
 your images from the media library so it un attaches the broken links from your posts then run the import tool to re attach them and import them back into
 your media library.
 
-= Isn't it illegal to download images and show them on my website?
+= Isn't it illegal to download images and show them on my website? =
 
 If you do not have permission to use the images then yes it is a copyright violation to use other peoples images on your website.  It is your
 responsibility to make sure you have legal right to use any images.  PLEASE DON'T USE THIS PLUGIN TO VIOLATE COPYRIGHT LAWS!
 
-= Where can I get support for this plugin?
+= Where can I get support for this plugin? =
 
 For immediate support you can check the #WordPress IRC channel on irc.freenode.net and see if I'm available to help you.  Just type ping c3mdigital
 and if I'm around I will be glad to help.  You can also use the WordPress support forums and I will try to answer as soon as possible.
@@ -74,3 +74,7 @@ and if I'm around I will be glad to help.  You can also use the WordPress suppor
 = 1.0 =
 
 * Initial version added to WordPress.org
+
+== Upgrade Notice ==
+
+Upgrade? This is the first version you don't need to upgrade yet...
