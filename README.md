@@ -1,21 +1,19 @@
-Media Tools for WordPress
-=========================
-
-=== Media Tools  ===
-Contributors: c3mdigital
-Tags: media, media library, images, featured images, post thumbnails, timthumb
-Requires at least: 3.1
-Tested up to: 3.4.1
-Stable tag: 1.0
-Donate link: http://www.redcross.org/
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Media Tools for WordPress  
+=========================  
+Contributors: c3mdigital  
+Tags: media, media library, images, featured images, post thumbnails, timthumb  
+Requires at least: 3.1  
+Tested up to: 3.4.1  
+Stable tag: 1.0  
+Donate link: http://www.redcross.org/  
+License: GPLv2 or later  
+License URI: http://www.gnu.org/licenses/gpl-2.0.html  
 
 A set of tools to help manage your media library. Imports external images and attaches them to your posts, pages or custom post types.
 
 ### A set of tools to help manage your media library.  
 
-== Description ==
+#### Description 
 
 Big improvements are coming to the WordPress media library in 3.5. If your not using the media library this plugin will import all the external images found in your posts or pages and import them into the media library and attach them.
 
@@ -35,12 +33,12 @@ Control and filter the import script by post type, author, date range, or catego
 
 Ajax interface that converts the images with one simple click.
 
-== Changelog ==
+#### Changelog  
 
-= 1.0 =
+##### 1.0
 
 * Initial version added to WordPress.org
 
-= 1.0.1 =
+##### 1.0.1
 
 * Added WordPress and PHP version check on activation hook
