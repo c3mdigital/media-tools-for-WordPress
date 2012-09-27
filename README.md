@@ -3,8 +3,8 @@ Media Tools for WordPress
 Contributors: c3mdigital  
 Tags: media, media library, images, featured images, post thumbnails, timthumb  
 Requires at least: 3.1  
-Tested up to: 3.4.1  
-Stable tag: 1.0  
+Tested up to: 3.5 beta 1
+Stable tag: 1.1
 Donate link: http://www.redcross.org/  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
@@ -34,6 +34,10 @@ Control and filter the import script by post type, author, date range, or catego
 Ajax interface that converts the images with one simple click.
 
 #### Changelog  
+
+#### 1.1
+
+* Added jQuery UI Progress bar and now process images individually to prevent time outs
 
 ##### 1.0
 
