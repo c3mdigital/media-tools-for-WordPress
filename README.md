@@ -4,7 +4,7 @@ Contributors: c3mdigital
 Tags: media, media library, images, featured images, post thumbnails, timthumb  
 Requires at least: 3.1  
 Tested up to: 3.5 beta 1
-Stable tag: 1.1
+Stable tag: 1.1  
 Donate link: http://www.redcross.org/  
 License: GPLv2 or later  
 License URI: http://www.gnu.org/licenses/gpl-2.0.html  
