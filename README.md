@@ -15,7 +15,7 @@ A set of tools to help manage your media library. Imports external images and at
 
 #### Description 
 
-Big improvements are coming to the WordPress media library in 3.5. If your not using the media library this plugin will import all the external images found in your posts or pages and import them into the media library and attach them.
+Improvements are coming to the WordPress media library in 3.5. If your not using the media library this plugin will import all the external images found in your posts or pages and import them into the media library and attach them.
 
 This plugin will help you convert from using Timthumb to WordPress built in featured image / post thumbnail support
 
